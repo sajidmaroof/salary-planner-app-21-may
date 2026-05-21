@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Start-Sleep -Seconds 35; $adb = \"C:\\\\Users\\\\sajid\\\\AppData\\\\Local\\\\Android\\\\sdk\\\\platform-tools\\\\adb.exe\"; & $adb -s ae112964 logcat -d -s \"flutter\" 2>&1 | Select-Object -Last 30)",
+      "PowerShell($adb = \"C:\\\\Users\\\\sajid\\\\AppData\\\\Local\\\\Android\\\\sdk\\\\platform-tools\\\\adb.exe\"; & $adb -s ae112964 shell \"input keyevent KEYCODE_WAKEUP\" 2>&1; Start-Sleep -Seconds 2; Get-Content \"C:\\\\Users\\\\sajid\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--All-backup-work-My-Fiver-Team-work-Development-app-Salary-app\\\\c27b134f-cf91-4a82-8838-0138e1c6c9e3\\\\tasks\\\\b6h0c56vk.output\" -Tail 5)",
+      "PowerShell(Start-Sleep -Seconds 35; $adb = \"C:\\\\Users\\\\sajid\\\\AppData\\\\Local\\\\Android\\\\sdk\\\\platform-tools\\\\adb.exe\"; & $adb -s ae112964 logcat -d -e \"\\\\[Auth\\\\]\" 2>&1)",
+      "PowerShell(Start-Sleep -Seconds 20; $adb = \"C:\\\\Users\\\\sajid\\\\AppData\\\\Local\\\\Android\\\\sdk\\\\platform-tools\\\\adb.exe\"; & $adb -s ae112964 logcat -d -e \"\\\\[Auth\\\\]\" 2>&1 | Select-Object -Last 10)",
+      "PowerShell($adb = \"C:\\\\Users\\\\sajid\\\\AppData\\\\Local\\\\Android\\\\sdk\\\\platform-tools\\\\adb.exe\"; & $adb -s ae112964 logcat -d 2>&1 | Select-String \"flutter|Auth\" | Select-Object -Last 20)",
+      "PowerShell($adb = \"C:\\\\Users\\\\sajid\\\\AppData\\\\Local\\\\Android\\\\sdk\\\\platform-tools\\\\adb.exe\"; & $adb -s ae112964 shell \"pidof com.example.salaryplanner.salary_planner\" 2>&1)",
+      "PowerShell($adb = \"C:\\\\Users\\\\sajid\\\\AppData\\\\Local\\\\Android\\\\sdk\\\\platform-tools\\\\adb.exe\"; & $adb -s ae112964 shell \"am start -n com.example.salaryplanner.salary_planner/com.example.salaryplanner.salary_planner.MainActivity\" 2>&1)",
+      "PowerShell(Start-Sleep -Seconds 6; $adb = \"C:\\\\Users\\\\sajid\\\\AppData\\\\Local\\\\Android\\\\sdk\\\\platform-tools\\\\adb.exe\"; & $adb -s ae112964 logcat -d 2>&1 | Select-String \"\\\\[Auth\\\\]\" | Select-Object -Last 10)",
+      "PowerShell(Start-Sleep -Seconds 3; $adb = \"C:\\\\Users\\\\sajid\\\\AppData\\\\Local\\\\Android\\\\sdk\\\\platform-tools\\\\adb.exe\"; & $adb -s ae112964 logcat -d 2>&1 | Select-String \"flutter\" | Select-Object -Last 15)",
+      "PowerShell(Start-Sleep -Seconds 5; $adb = \"C:\\\\Users\\\\sajid\\\\AppData\\\\Local\\\\Android\\\\sdk\\\\platform-tools\\\\adb.exe\"; & $adb -s ae112964 logcat -d 2>&1 | Select-String \"flutter|Error|Exception\" | Select-Object -Last 10)",
+      "PowerShell(Start-Sleep -Seconds 20; $adb = \"C:\\\\Users\\\\sajid\\\\AppData\\\\Local\\\\Android\\\\sdk\\\\platform-tools\\\\adb.exe\"; & $adb -s ae112964 shell \"pidof com.example.salaryplanner.salary_planner\" 2>&1)",
+      "PowerShell($adb = \"C:\\\\Users\\\\sajid\\\\AppData\\\\Local\\\\Android\\\\sdk\\\\platform-tools\\\\adb.exe\"; & $adb -s ae112964 shell \"am start -n com.example.salaryplanner.salary_planner/.MainActivity\" 2>&1)",
+      "Bash(Get-Content \"C:\\\\Users\\\\sajid\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--All-backup-work-My-Fiver-Team-work-Development-app-Salary-app\\\\c27b134f-cf91-4a82-8838-0138e1c6c9e3\\\\tasks\\\\bsfp5244q.output\" -Wait)",
+      "Bash(Select-String -Pattern \"Built|Error|error|FAILED|warning|Gradle|✓|✗\")",
+      "PowerShell(& \"C:\\\\Users\\\\sajid\\\\AppData\\\\Local\\\\Android\\\\sdk\\\\platform-tools\\\\adb.exe\" install -r \"d:\\\\All backup work\\\\My Fiver\\\\Team work\\\\Development app\\\\Salary app\\\\build\\\\app\\\\outputs\\\\flutter-apk\\\\app-debug.apk\" 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\sajid\\\\AppData\\\\Local\\\\Android\\\\sdk\\\\platform-tools\\\\adb.exe\" shell am start -n \"com.example.salaryplanner.salary_planner/com.example.salaryplanner.salary_planner.MainActivity\" 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\sajid\\\\AppData\\\\Local\\\\Android\\\\sdk\\\\platform-tools\\\\adb.exe\" shell pidof com.example.salaryplanner.salary_planner)",
+      "PowerShell(& \"C:\\\\Users\\\\sajid\\\\AppData\\\\Local\\\\Android\\\\sdk\\\\platform-tools\\\\adb.exe\" shell \"ps -A | grep salary\")",
+      "PowerShell(& \"C:\\\\Users\\\\sajid\\\\AppData\\\\Local\\\\Android\\\\sdk\\\\platform-tools\\\\adb.exe\" shell am start -n \"com.example.salaryplanner.salary_planner/.MainActivity\" 2>&1)",
+      "Bash(cmd /c \"cd /d \\\\\"d:\\\\All backup work\\\\My Fiver\\\\Team work\\\\Development app\\\\Salary app\\\\\" && C:\\\\flutter_sdk\\\\bin\\\\flutter clean && C:\\\\flutter_sdk\\\\bin\\\\flutter pub get && C:\\\\flutter_sdk\\\\bin\\\\flutter build apk --debug 2>&1\")",
+      "PowerShell($apk = \"d:\\\\All backup work\\\\My Fiver\\\\Team work\\\\Development app\\\\Salary app\\\\build\\\\app\\\\outputs\\\\flutter-apk\\\\app-debug.apk\"; if \\(Test-Path $apk\\) { Write-Host \"EXISTS: $\\(\\(Get-Item $apk\\).LastWriteTime\\) | Size: $\\(\\(Get-Item $apk\\).Length\\) bytes\" } else { Write-Host \"APK NOT FOUND\" })",
+      "PowerShell(Set-Location \"d:\\\\All backup work\\\\My Fiver\\\\Team work\\\\Development app\\\\Salary app\"; Write-Host \"Building APK...\"; & \"C:\\\\flutter_sdk\\\\bin\\\\flutter.bat\" build apk --debug 2>&1 | ForEach-Object { Write-Host $_ }; Write-Host \"Build complete.\")"
+    ]
+  }
+}
