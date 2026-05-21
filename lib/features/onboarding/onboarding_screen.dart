@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class OnboardingScreen extends ConsumerStatefulWidget {
-  const OnboardingScreen({Key? key}) : super(key: key);
+class OnboardingScreen extends StatefulWidget {
+  const OnboardingScreen({super.key});
 
   @override
-  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
+class _OnboardingScreenState extends State<OnboardingScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _fade;
@@ -32,15 +31,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Container(
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFEDE9FE), Color(0xFFFFFFFF)],
-            stops: [0.0, 0.6],
+          gradient: RadialGradient(
+            center: Alignment(0.0, -0.9),
+            radius: 1.1,
+            colors: [
+              Color(0xFFCFB0F8),
+              Color(0xFFE3DCF8),
+              Color(0xFFECEAF8),
+            ],
+            stops: [0.0, 0.45, 1.0],
           ),
         ),
         child: SafeArea(
@@ -50,41 +54,59 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Column(
                 children: [
-                  const Spacer(flex: 2),
+                  const Spacer(flex: 3),
 
-                  // Gradient ring + wallet icon
-                  _GradientRingIcon(),
-
-                  const SizedBox(height: 40),
-
-                  // Headline
-                  RichText(
-                    textAlign: TextAlign.center,
-                    text: const TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'Master Your\n',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF1A1A2E),
-                            height: 1.2,
-                          ),
+                  // Stroke circle + gradient wallet icon
+                  Container(
+                    width: 160,
+                    height: 160,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      border: Border.all(
+                          color: const Color(0xFF9B55F7), width: 2.5),
+                    ),
+                    child: Center(
+                      child: ShaderMask(
+                        shaderCallback: (bounds) => const LinearGradient(
+                          colors: [Color(0xFF8B2CF9), Color(0xFF5B1FA8)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ).createShader(bounds),
+                        child: const Icon(
+                          Icons.account_balance_wallet,
+                          size: 72,
+                          color: Colors.white,
                         ),
-                        TextSpan(
-                          text: 'Daily Spending',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFFA855F7),
-                            height: 1.2,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 36),
+
+                  // Headline
+                  const Text(
+                    'Master Your',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2D2D2D),
+                      height: 1.25,
+                    ),
+                  ),
+                  const Text(
+                    'Daily Spending',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF8B3FD9),
+                      height: 1.25,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
 
                   const Text(
                     'Take total control of your money. Know exactly what you can afford to spend each day until payday.',
@@ -98,25 +120,27 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
 
                   const Spacer(flex: 2),
 
-                  // Sign In button (outlined)
+                  // Sign in button (outlined)
                   SizedBox(
                     width: double.infinity,
                     height: 54,
                     child: OutlinedButton(
                       onPressed: () => context.go('/signin'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFFA855F7),
+                        foregroundColor: const Color(0xFF2D2D2D),
                         side: const BorderSide(
-                            color: Color(0xFFA855F7), width: 1.5),
+                            color: Color(0xFFBB88F8), width: 1.5),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(32),
                         ),
+                        backgroundColor: Colors.white.withValues(alpha: 0.6),
                       ),
                       child: const Text(
                         'Sign in',
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF2D2D2D),
                         ),
                       ),
                     ),
@@ -124,41 +148,43 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
 
                   const SizedBox(height: 14),
 
-                  // Create Account button (gradient)
-                  Container(
+                  // Create account button (gradient fill)
+                  SizedBox(
                     width: double.infinity,
                     height: 54,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFA855F7), Color(0xFFEC4899)],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                      borderRadius: BorderRadius.circular(32),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFA855F7).withOpacity(0.35),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF9B55F7), Color(0xFF7428D9)],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
                         ),
-                      ],
-                    ),
-                    child: ElevatedButton(
-                      onPressed: () => context.go('/signup'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(32),
-                        ),
+                        borderRadius: BorderRadius.circular(32),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF9B55F7).withValues(alpha: 0.4),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                       ),
-                      child: const Text(
-                        'Create account',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                      child: ElevatedButton(
+                        onPressed: () => context.go('/signup'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(32),
+                          ),
+                        ),
+                        child: const Text(
+                          'Create account',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
@@ -167,51 +193,52 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   const SizedBox(height: 28),
 
                   // Or continue with
-                  Row(
-                    children: [
-                      Expanded(
-                          child: Divider(
-                              color: Colors.grey.shade300, thickness: 1)),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'Or continue with',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF8B8FA8),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                          child: Divider(
-                              color: Colors.grey.shade300, thickness: 1)),
-                    ],
+                  const Text(
+                    'Or continue with',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF8B8FA8),
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
 
                   const SizedBox(height: 20),
 
-                  // Social buttons
+                  // Social buttons (rounded squares)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _SocialButton(
-                        label: 'G',
-                        labelColor: const Color(0xFFEA4335),
                         onTap: () => context.go('/social-login/Google'),
+                        child: const Text(
+                          'G',
+                          style: TextStyle(
+                            color: Color(0xFFEA4335),
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 16),
                       _SocialButton(
-                        label: 'f',
-                        labelColor: const Color(0xFF1877F2),
                         onTap: () => context.go('/social-login/Facebook'),
+                        child: const Text(
+                          'f',
+                          style: TextStyle(
+                            color: Color(0xFF1877F2),
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 16),
                       _SocialButton(
-                        label: '',
-                        labelColor: Colors.black,
                         onTap: () => context.go('/social-login/Apple'),
-                        useIcon: true,
+                        child: const Icon(
+                          Icons.apple,
+                          color: Colors.black,
+                          size: 26,
+                        ),
                       ),
                     ],
                   ),
@@ -227,57 +254,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   }
 }
 
-class _GradientRingIcon extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 180,
-      height: 180,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          colors: [Color(0xFFA855F7), Color(0xFFEC4899)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      padding: const EdgeInsets.all(6),
-      child: Container(
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white,
-        ),
-        child: Center(
-          child: ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              colors: [Color(0xFFA855F7), Color(0xFFEC4899)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ).createShader(bounds),
-            child: const Icon(
-              Icons.account_balance_wallet,
-              size: 72,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _SocialButton extends StatelessWidget {
-  final String label;
-  final Color labelColor;
   final VoidCallback onTap;
-  final bool useIcon;
+  final Widget child;
 
-  const _SocialButton({
-    required this.label,
-    required this.labelColor,
-    required this.onTap,
-    this.useIcon = false,
-  });
+  const _SocialButton({required this.onTap, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -288,28 +269,17 @@ class _SocialButton extends StatelessWidget {
         height: 56,
         decoration: BoxDecoration(
           color: Colors.white,
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.grey.shade200, width: 1.5),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE5E5E5), width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Center(
-          child: useIcon
-              ? Icon(Icons.phone_iphone, color: labelColor, size: 26)
-              : Text(
-                  label,
-                  style: TextStyle(
-                    color: labelColor,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-        ),
+        child: Center(child: child),
       ),
     );
   }

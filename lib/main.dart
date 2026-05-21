@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +25,18 @@ import 'features/splash/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  FlutterError.onError = (details) {
+    debugPrint('FLUTTER_ERROR: ${details.exceptionAsString()}');
+    debugPrint('FLUTTER_STACK: ${details.stack}');
+    FlutterError.presentError(details);
+  };
+
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('PLATFORM_ERROR: $error');
+    debugPrint('PLATFORM_STACK: $stack');
+    return false;
+  };
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
