@@ -1,4 +1,6 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -12,6 +14,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _fade;
+
+  static const Color _purpleLight = Color(0xFFB06EFF);
+  static const Color _purpleDark = Color(0xFF6A0DAD);
+  static const Color _bgDark = Color(0xFF0D0D0D);
 
   @override
   void initState() {
@@ -31,220 +37,251 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment(0.0, -0.9),
-            radius: 1.1,
-            colors: [
-              Color(0xFFCFB0F8),
-              Color(0xFFE3DCF8),
-              Color(0xFFECEAF8),
-            ],
-            stops: [0.0, 0.45, 1.0],
+      backgroundColor: _bgDark,
+      body: Stack(
+        children: [
+          // Radial purple glow at top
+          Positioned(
+            top: -80,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                width: 380,
+                height: 380,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      _purpleLight.withValues(alpha: 0.35),
+                      _purpleDark.withValues(alpha: 0.15),
+                      Colors.transparent,
+                    ],
+                    stops: const [0.0, 0.5, 1.0],
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fade,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Column(
-                children: [
-                  const Spacer(flex: 3),
 
-                  // Stroke circle + gradient wallet icon
-                  Container(
-                    width: 160,
-                    height: 160,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                      border: Border.all(
-                          color: const Color(0xFF9B55F7), width: 2.5),
-                    ),
-                    child: Center(
-                      child: ShaderMask(
-                        shaderCallback: (bounds) => const LinearGradient(
-                          colors: [Color(0xFF8B2CF9), Color(0xFF5B1FA8)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ).createShader(bounds),
-                        child: const Icon(
-                          Icons.account_balance_wallet,
-                          size: 72,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
+          SafeArea(
+            child: FadeTransition(
+              opacity: _fade,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 28.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 24),
 
-                  const SizedBox(height: 36),
+                    // Gradient stroke circle with wallet icon
+                    const _GradientCircleIcon(),
 
-                  // Headline
-                  const Text(
-                    'Master Your',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF2D2D2D),
-                      height: 1.25,
-                    ),
-                  ),
-                  const Text(
-                    'Daily Spending',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF8B3FD9),
-                      height: 1.25,
-                    ),
-                  ),
+                    const SizedBox(height: 16),
 
-                  const SizedBox(height: 16),
-
-                  const Text(
-                    'Take total control of your money. Know exactly what you can afford to spend each day until payday.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF8B8FA8),
-                      height: 1.6,
-                    ),
-                  ),
-
-                  const Spacer(flex: 2),
-
-                  // Sign in button (outlined)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 54,
-                    child: OutlinedButton(
-                      onPressed: () => context.go('/signin'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF2D2D2D),
-                        side: const BorderSide(
-                            color: Color(0xFFBB88F8), width: 1.5),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(32),
-                        ),
-                        backgroundColor: Colors.white.withValues(alpha: 0.6),
-                      ),
-                      child: const Text(
-                        'Sign in',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF2D2D2D),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // Create account button (gradient fill)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 54,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF9B55F7), Color(0xFF7428D9)],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ),
-                        borderRadius: BorderRadius.circular(32),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF9B55F7).withValues(alpha: 0.4),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
+                    // Title
+                    RichText(
+                      textAlign: TextAlign.center,
+                      text: const TextSpan(
+                        children: [
+                          TextSpan(
+                            text: 'Master Your\n',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w700,
+                              height: 1.2,
+                            ),
+                          ),
+                          WidgetSpan(
+                            alignment: PlaceholderAlignment.baseline,
+                            baseline: TextBaseline.alphabetic,
+                            child: _GradientText(
+                              'Daily Spending',
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w700,
+                                height: 1.2,
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                      child: ElevatedButton(
-                        onPressed: () => context.go('/signup'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(32),
-                          ),
-                        ),
-                        child: const Text(
-                          'Create account',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    Text(
+                      'Take total control of your money. Know exactly\nwhat you can afford to spend each day\nuntil payday.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 15,
+                        height: 1.55,
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 28),
+                    const SizedBox(height: 44),
 
-                  // Or continue with
-                  const Text(
-                    'Or continue with',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF8B8FA8),
-                      fontWeight: FontWeight.w500,
+                    // Sign In button (gradient stroke border, white fill)
+                    _GradientBorderButton(
+                      label: 'Sign In',
+                      onTap: () => context.go('/signin'),
                     ),
-                  ),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 14),
 
-                  // Social buttons (rounded squares)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _SocialButton(
-                        onTap: () => context.go('/social-login/Google'),
-                        child: const Text(
-                          'G',
-                          style: TextStyle(
-                            color: Color(0xFFEA4335),
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
+                    // Create Account button (solid purple gradient)
+                    _SolidGradientButton(
+                      label: 'Create Account',
+                      onTap: () => context.go('/signup'),
+                    ),
+
+                    const SizedBox(height: 36),
+
+                    // Divider with "or continue with"
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Divider(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            thickness: 1,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      _SocialButton(
-                        onTap: () => context.go('/social-login/Facebook'),
-                        child: const Text(
-                          'f',
-                          style: TextStyle(
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            'or continue with',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.4),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Divider(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            thickness: 1,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Social login buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _SocialButton(
+                          icon: const _GoogleIcon(),
+                          onTap: () => context.go('/social-login/Google'),
+                        ),
+                        const SizedBox(width: 16),
+                        _SocialButton(
+                          icon: const Icon(
+                            Icons.facebook,
                             color: Color(0xFF1877F2),
-                            fontSize: 26,
-                            fontWeight: FontWeight.w700,
+                            size: 26,
                           ),
+                          onTap: () => context.go('/social-login/Facebook'),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      _SocialButton(
-                        onTap: () => context.go('/social-login/Apple'),
-                        child: const Icon(
-                          Icons.apple,
-                          color: Colors.black,
-                          size: 26,
+                        const SizedBox(width: 16),
+                        _SocialButton(
+                          icon: const Icon(
+                            Icons.apple,
+                            color: Colors.white,
+                            size: 26,
+                          ),
+                          onTap: () => context.go('/social-login/Apple'),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
 
-                  const Spacer(),
-                ],
+                    const SizedBox(height: 36),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── SVG wallet icon (exact design from Illustrator) ───────────────────────────
+
+class _GradientCircleIcon extends StatelessWidget {
+  const _GradientCircleIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return SvgPicture.asset(
+      'assets/icons/wallet_icon.svg',
+      width: 540,
+      height: 540,
+    );
+  }
+}
+
+// ── Gradient text ─────────────────────────────────────────────────────────────
+
+class _GradientText extends StatelessWidget {
+  final String text;
+  final TextStyle style;
+
+  const _GradientText(this.text, {required this.style});
+
+  @override
+  Widget build(BuildContext context) {
+    return ShaderMask(
+      shaderCallback: (bounds) => const LinearGradient(
+        colors: [Color(0xFFB06EFF), Color(0xFF7B2FD4)],
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+      ).createShader(bounds),
+      child: Text(
+        text,
+        style: style.copyWith(color: Colors.white),
+      ),
+    );
+  }
+}
+
+// ── Sign In: gradient stroke border, white fill ───────────────────────────────
+
+class _GradientBorderButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _GradientBorderButton({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: CustomPaint(
+        painter: _GradientBorderPainter(radius: 14),
+        child: Container(
+          width: double.infinity,
+          height: 54,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          alignment: Alignment.center,
+          child: ShaderMask(
+            shaderCallback: (bounds) => const LinearGradient(
+              colors: [Color(0xFFB06EFF), Color(0xFF6A0DAD)],
+            ).createShader(bounds),
+            child: const Text(
+              'Sign In',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
               ),
             ),
           ),
@@ -254,33 +291,151 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 }
 
-class _SocialButton extends StatelessWidget {
-  final VoidCallback onTap;
-  final Widget child;
+class _GradientBorderPainter extends CustomPainter {
+  final double radius;
+  const _GradientBorderPainter({required this.radius});
 
-  const _SocialButton({required this.onTap, required this.child});
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final rRect = RRect.fromRectAndRadius(rect, Radius.circular(radius));
+
+    final paint = Paint()
+      ..shader = const LinearGradient(
+        colors: [Color(0xFFB06EFF), Color(0xFF6A0DAD)],
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+      ).createShader(rect)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    canvas.drawRRect(rRect, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ── Create Account: solid purple gradient ─────────────────────────────────────
+
+class _SolidGradientButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _SolidGradientButton({required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 56,
-        height: 56,
+        width: double.infinity,
+        height: 54,
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E5E5), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          gradient: const LinearGradient(
+            colors: [Color(0xFFB06EFF), Color(0xFF6A0DAD)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(14),
         ),
-        child: Center(child: child),
+        alignment: Alignment.center,
+        child: const Text(
+          'Create Account',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.3,
+          ),
+        ),
       ),
     );
   }
+}
+
+// ── Social button card ────────────────────────────────────────────────────────
+
+class _SocialButton extends StatelessWidget {
+  final Widget icon;
+  final VoidCallback onTap;
+
+  const _SocialButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 72,
+        height: 52,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.08),
+            width: 1,
+          ),
+        ),
+        child: Center(child: icon),
+      ),
+    );
+  }
+}
+
+// ── Google multicolor icon ────────────────────────────────────────────────────
+
+class _GoogleIcon extends StatelessWidget {
+  const _GoogleIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: const Size(24, 24),
+      painter: _GoogleIconPainter(),
+    );
+  }
+}
+
+class _GoogleIconPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double cx = size.width / 2;
+    final double cy = size.height / 2;
+    final double r = size.width / 2;
+
+    const blue = Color(0xFF4285F4);
+    const red = Color(0xFFEA4335);
+    const yellow = Color(0xFFFBBC05);
+    const green = Color(0xFF34A853);
+
+    canvas.drawArc(
+      Rect.fromCircle(center: Offset(cx, cy), radius: r),
+      -0.52, 1.04, true, Paint()..color = blue,
+    );
+    canvas.drawArc(
+      Rect.fromCircle(center: Offset(cx, cy), radius: r),
+      math.pi + 0.52, 1.57, true, Paint()..color = red,
+    );
+    canvas.drawArc(
+      Rect.fromCircle(center: Offset(cx, cy), radius: r),
+      math.pi / 2 + 0.52, 1.05, true, Paint()..color = yellow,
+    );
+    canvas.drawArc(
+      Rect.fromCircle(center: Offset(cx, cy), radius: r),
+      math.pi / 2 - 0.52, 1.04, true, Paint()..color = green,
+    );
+
+    // White center cutout
+    canvas.drawCircle(Offset(cx, cy), r * 0.58, Paint()..color = Colors.white);
+
+    // Blue right tab
+    canvas.drawRect(
+      Rect.fromLTWH(cx, cy - r * 0.18, r + 2, r * 0.36),
+      Paint()..color = blue,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

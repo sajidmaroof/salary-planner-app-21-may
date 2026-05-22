@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 500 500">
+  <defs>
+    <linearGradient id="lg1" x1="192.98" y1="249.58" x2="293.55" y2="249.58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#792de5"/>
+      <stop offset="1" stop-color="#cf3ee1"/>
+    </linearGradient>
+    <linearGradient id="lg2" x1="192.98" y1="256.7" x2="293.55" y2="256.7" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#792de5"/>
+      <stop offset="1" stop-color="#cf3ee1"/>
+    </linearGradient>
+    <linearGradient id="lg3" x1="192.98" y1="201" x2="293.55" y2="201" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#792de5"/>
+      <stop offset="1" stop-color="#cf3ee1"/>
+    </linearGradient>
+    <linearGradient id="lg4" x1="192.98" y1="256.7" x2="293.55" y2="256.7" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#792de5"/>
+      <stop offset="1" stop-color="#cf3ee1"/>
+    </linearGradient>
+  </defs>
+  <!-- Circle ring -->
+  <path fill="url(#lg1)" d="M250.38,138.01c-61.62,0-111.57,49.95-111.57,111.57s49.95,111.57,111.57,111.57,111.57-49.95,111.57-111.57-49.95-111.57-111.57-111.57ZM250.38,352.96c-57.09,0-103.38-46.28-103.38-103.38s46.28-103.38,103.38-103.38,103.38,46.28,103.38,103.38-46.28,103.38-103.38,103.38Z"/>
+  <!-- Right pocket with clasp dot -->
+  <path fill="url(#lg2)" d="M303.14,245.62h-19.5c-6.12,0-11.08,4.96-11.08,11.08s4.96,11.08,11.08,11.08h19.5c2.17,0,3.93-1.76,3.93-3.93v-14.31c0-2.17-1.76-3.93-3.93-3.93ZM283.64,260.83c-2.28,0-4.13-1.85-4.13-4.13s1.85-4.13,4.13-4.13,4.13,1.85,4.13,4.13-1.85,4.13-4.13,4.13Z"/>
+  <!-- Card sticking out at top -->
+  <path fill="url(#lg3)" d="M282.04,208.68v-4.88c0-6.88-6.52-11.9-13.17-10.13l-56.45,15.01h69.62Z"/>
+  <!-- Main wallet body with arrow -->
+  <path fill="url(#lg4)" d="M283.64,239.98h16.83v-14.95c0-5.91-4.79-10.7-10.7-10.7h-84.88c-5.91,0-10.7,4.79-10.7,10.7v9.89c0,5.91,4.79,10.7,10.7,10.7h25.79v-6.23c0-2.54,3.07-3.82,4.87-2.02l17.31,17.31c1.11,1.11,1.11,2.92,0,4.04l-17.31,17.31c-1.8,1.8-4.87.52-4.87-2.02v-6.23h-25.8c-5.91,0-10.7,4.79-10.7,10.7v9.89c0,5.91,4.79,10.7,10.7,10.7h84.88c5.91,0,10.7-4.79,10.7-10.7v-14.95h-16.83c-4.6,0-8.82-1.88-11.83-4.9-3.02-3.01-4.9-7.23-4.9-11.83,0-4.6,1.88-8.82,4.9-11.83,3.01-3.02,7.23-4.9,11.83-4.9Z"/>
+</svg>
