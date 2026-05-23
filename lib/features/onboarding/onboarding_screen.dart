@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -17,7 +16,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   static const Color _purpleLight = Color(0xFFB06EFF);
   static const Color _purpleDark = Color(0xFF6A0DAD);
-  static const Color _bgDark = Color(0xFF0D0D0D);
+  static const Color _bgDark = Color(0xFFF1EFF7);
 
   @override
   void initState() {
@@ -42,19 +41,19 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         children: [
           // Radial purple glow at top
           Positioned(
-            top: -80,
+            top: -64,
             left: 0,
             right: 0,
             child: Center(
               child: Container(
-                width: 380,
-                height: 380,
+                width: 304,
+                height: 304,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      _purpleLight.withValues(alpha: 0.35),
-                      _purpleDark.withValues(alpha: 0.15),
+                      _purpleLight.withValues(alpha: 0.55),
+                      _purpleDark.withValues(alpha: 0.25),
                       Colors.transparent,
                     ],
                     stops: const [0.0, 0.5, 1.0],
@@ -68,16 +67,16 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             child: FadeTransition(
               opacity: _fade,
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 28.0),
+                padding: const EdgeInsets.symmetric(horizontal: 22.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const SizedBox(height: 24),
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.30),
 
                     // Gradient stroke circle with wallet icon
                     const _GradientCircleIcon(),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 13),
 
                     // Title
                     RichText(
@@ -87,8 +86,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           TextSpan(
                             text: 'Master Your\n',
                             style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 32,
+                              color: Color(0xFF1E223E),
+                              fontSize: 26,
                               fontWeight: FontWeight.w700,
                               height: 1.2,
                             ),
@@ -99,7 +98,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                             child: _GradientText(
                               'Daily Spending',
                               style: TextStyle(
-                                fontSize: 32,
+                                fontSize: 26,
                                 fontWeight: FontWeight.w700,
                                 height: 1.2,
                               ),
@@ -109,96 +108,88 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       ),
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
 
                     Text(
                       'Take total control of your money. Know exactly\nwhat you can afford to spend each day\nuntil payday.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
-                        fontSize: 15,
+                        color: Color(0xFF1E223E).withValues(alpha: 0.6),
+                        fontSize: 12,
                         height: 1.55,
                       ),
                     ),
 
-                    const SizedBox(height: 44),
+                    const SizedBox(height: 35),
 
                     // Sign In button (gradient stroke border, white fill)
                     _GradientBorderButton(
                       label: 'Sign In',
-                      onTap: () => context.go('/signin'),
+                      onTap: () => context.push('/signin'),
                     ),
 
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 11),
 
                     // Create Account button (solid purple gradient)
                     _SolidGradientButton(
                       label: 'Create Account',
-                      onTap: () => context.go('/signup'),
+                      onTap: () => context.push('/signup'),
                     ),
 
-                    const SizedBox(height: 36),
+                    const SizedBox(height: 29),
 
                     // Divider with "or continue with"
                     Row(
                       children: [
                         Expanded(
                           child: Divider(
-                            color: Colors.white.withValues(alpha: 0.15),
+                            color: Color(0xFF1E223E).withValues(alpha: 0.15),
                             thickness: 1,
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
                           child: Text(
                             'or continue with',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.4),
-                              fontSize: 13,
+                              color: Color(0xFF1E223E).withValues(alpha: 0.5),
+                              fontSize: 10,
                             ),
                           ),
                         ),
                         Expanded(
                           child: Divider(
-                            color: Colors.white.withValues(alpha: 0.15),
+                            color: Color(0xFF1E223E).withValues(alpha: 0.15),
                             thickness: 1,
                           ),
                         ),
                       ],
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 19),
 
                     // Social login buttons
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _SocialButton(
-                          icon: const _GoogleIcon(),
-                          onTap: () => context.go('/social-login/Google'),
+                          icon: SvgPicture.asset('assets/icons/google_icon.svg', width: 15, height: 15),
+                          onTap: () => context.push('/social-login/Google'),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 13),
                         _SocialButton(
-                          icon: const Icon(
-                            Icons.facebook,
-                            color: Color(0xFF1877F2),
-                            size: 26,
-                          ),
-                          onTap: () => context.go('/social-login/Facebook'),
+                          icon: SvgPicture.asset('assets/icons/facebook_icon.svg', width: 15, height: 15),
+                          onTap: () => context.push('/social-login/Facebook'),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 13),
                         _SocialButton(
-                          icon: const Icon(
-                            Icons.apple,
-                            color: Colors.white,
-                            size: 26,
-                          ),
-                          onTap: () => context.go('/social-login/Apple'),
+                          icon: SvgPicture.asset('assets/icons/apple_icon.svg', width: 14, height: 14),
+                          onTap: () => context.push('/social-login/Apple'),
                         ),
                       ],
                     ),
 
-                    const SizedBox(height: 36),
+                    const SizedBox(height: 29),
                   ],
                 ),
               ),
@@ -219,8 +210,8 @@ class _GradientCircleIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return SvgPicture.asset(
       'assets/icons/wallet_icon.svg',
-      width: 540,
-      height: 540,
+      width: 136,
+      height: 136,
     );
   }
 }
@@ -262,27 +253,22 @@ class _GradientBorderButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: CustomPaint(
-        painter: _GradientBorderPainter(radius: 14),
+        painter: _GradientBorderPainter(radius: 30),
         child: Container(
           width: double.infinity,
-          height: 54,
+          height: 50,
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
+            color: const Color(0xFFE8D5FF),
+            borderRadius: BorderRadius.circular(30),
           ),
           alignment: Alignment.center,
-          child: ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              colors: [Color(0xFFB06EFF), Color(0xFF6A0DAD)],
-            ).createShader(bounds),
-            child: const Text(
-              'Sign In',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.3,
-              ),
+          child: const Text(
+            'Sign In',
+            style: TextStyle(
+              color: Color(0xFF1E223E),
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
             ),
           ),
         ),
@@ -302,12 +288,12 @@ class _GradientBorderPainter extends CustomPainter {
 
     final paint = Paint()
       ..shader = const LinearGradient(
-        colors: [Color(0xFFB06EFF), Color(0xFF6A0DAD)],
-        begin: Alignment.centerLeft,
-        end: Alignment.centerRight,
+        colors: [Color(0xFF9B5BFF), Color(0xFFD946EF)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
       ).createShader(rect)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
+      ..strokeWidth = 1.6;
 
     canvas.drawRRect(rRect, paint);
   }
@@ -330,21 +316,21 @@ class _SolidGradientButton extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        height: 54,
+        height: 50,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xFFB06EFF), Color(0xFF6A0DAD)],
+            colors: [Color(0xFF8B3CF7), Color(0xFFD946EF)],
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
           ),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(30),
         ),
         alignment: Alignment.center,
         child: const Text(
           'Create Account',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 16,
+            fontSize: 15,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.3,
           ),
@@ -366,76 +352,19 @@ class _SocialButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 72,
-        height: 52,
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.08),
-            width: 1,
+      child: CustomPaint(
+        painter: _GradientBorderPainter(radius: 8),
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
           ),
+          child: Center(child: icon),
         ),
-        child: Center(child: icon),
       ),
     );
   }
 }
 
-// ── Google multicolor icon ────────────────────────────────────────────────────
-
-class _GoogleIcon extends StatelessWidget {
-  const _GoogleIcon();
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: const Size(24, 24),
-      painter: _GoogleIconPainter(),
-    );
-  }
-}
-
-class _GoogleIconPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final double cx = size.width / 2;
-    final double cy = size.height / 2;
-    final double r = size.width / 2;
-
-    const blue = Color(0xFF4285F4);
-    const red = Color(0xFFEA4335);
-    const yellow = Color(0xFFFBBC05);
-    const green = Color(0xFF34A853);
-
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(cx, cy), radius: r),
-      -0.52, 1.04, true, Paint()..color = blue,
-    );
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(cx, cy), radius: r),
-      math.pi + 0.52, 1.57, true, Paint()..color = red,
-    );
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(cx, cy), radius: r),
-      math.pi / 2 + 0.52, 1.05, true, Paint()..color = yellow,
-    );
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(cx, cy), radius: r),
-      math.pi / 2 - 0.52, 1.04, true, Paint()..color = green,
-    );
-
-    // White center cutout
-    canvas.drawCircle(Offset(cx, cy), r * 0.58, Paint()..color = Colors.white);
-
-    // Blue right tab
-    canvas.drawRect(
-      Rect.fromLTWH(cx, cy - r * 0.18, r + 2, r * 0.36),
-      Paint()..color = blue,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

@@ -29,6 +29,10 @@ dependencies:
   cloud_firestore: ^6.4.0
   lottie: ^3.1.0
   flutter_svg: ^2.0.10+1
+  google_sign_in: ^6.2.1
+  flutter_facebook_auth: ^7.1.1
+  sign_in_with_apple: ^6.1.2
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:
