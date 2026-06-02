@@ -2,7 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/user_settings.dart';
+import '../../data/models/monthly_report.dart';
+import '../../services/background_service.dart';
 
 final appAuthNotifier = AppAuthNotifier();
 
@@ -25,12 +28,28 @@ class AppAuthNotifier extends ChangeNotifier {
   Future<void> _onAuthChanged(User? user) async {
     _user = user;
     if (user != null) {
+      await _clearLocalDataIfUserChanged(user.uid);
       await _fetchSetupStatus(user.uid);
+      await registerDailyNotificationTask();
     } else {
       _setupComplete = false;
+      await cancelDailyNotificationTask();
     }
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<void> _clearLocalDataIfUserChanged(String uid) async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastUid = prefs.getString('last_user_uid');
+    if (lastUid != null && lastUid != uid) {
+      // Different account — wipe ALL local Hive data so previous user's data is not reused
+      await Hive.box<UserSettings>('user_settings').clear();
+      await Hive.box('expenses').clear();
+      await Hive.box('planned_expenses').clear();
+      await Hive.box<MonthlyReport>('monthly_reports').clear();
+    }
+    await prefs.setString('last_user_uid', uid);
   }
 
   Future<void> _fetchSetupStatus(String uid) async {

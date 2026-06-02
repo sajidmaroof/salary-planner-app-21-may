@@ -3,6 +3,7 @@ import 'package:hive/hive.dart';
 import '../data/models/user_settings.dart';
 import '../data/models/expense.dart';
 import '../data/models/planned_expense.dart';
+import '../data/models/monthly_report.dart';
 import '../data/models/currency.dart';
 import '../core/utils/currency_formatter.dart';
 
@@ -40,10 +41,35 @@ final expensesBoxProvider = Provider<Box<Expense>>((ref) {
   return Hive.box<Expense>('expenses');
 });
 
-// Provides a list of all expenses
+// Provides a list of ALL expenses (for history screen)
 final expensesProvider = StateProvider<List<Expense>>((ref) {
   final box = ref.watch(expensesBoxProvider);
   return box.values.toList()..sort((a, b) => b.date.compareTo(a.date)); // Newest first
+});
+
+// Provides only current-cycle expenses (after lastSalaryDate)
+final currentCycleExpensesProvider = Provider<List<Expense>>((ref) {
+  final all = ref.watch(expensesProvider);
+  final settings = ref.watch(userSettingsProvider);
+  if (settings?.lastSalaryDate == null) return all;
+  final cycleStart = settings!.lastSalaryDate!;
+  return all.where((e) => !e.date.isBefore(cycleStart)).toList();
+});
+
+// Monthly reports box + provider
+final monthlyReportsBoxProvider = Provider<Box<MonthlyReport>>((ref) {
+  return Hive.box<MonthlyReport>('monthly_reports');
+});
+
+final monthlyReportsProvider = StateProvider<List<MonthlyReport>>((ref) {
+  final box = ref.watch(monthlyReportsBoxProvider);
+  final list = box.values.toList();
+  list.sort((a, b) {
+    final aDate = DateTime(a.year, a.month);
+    final bDate = DateTime(b.year, b.month);
+    return bDate.compareTo(aDate); // newest first
+  });
+  return list;
 });
 
 // Planned Expenses providers
@@ -56,11 +82,11 @@ final plannedExpensesProvider = StateProvider<List<PlannedExpense>>((ref) {
   return box.values.toList()..sort((a, b) => a.targetDate.compareTo(b.targetDate)); // Earliest first
 });
 
-// Derived provider for today's expenses
+// Derived provider for today's expenses (from current cycle only)
 final todaysExpensesProvider = Provider<List<Expense>>((ref) {
-  final allExpenses = ref.watch(expensesProvider);
+  final cycleExpenses = ref.watch(currentCycleExpensesProvider);
   final now = DateTime.now();
-  return allExpenses.where((e) {
+  return cycleExpenses.where((e) {
     return e.date.year == now.year &&
            e.date.month == now.month &&
            e.date.day == now.day;
@@ -98,37 +124,38 @@ final dailyStatsProvider = Provider<DailyStats?>((ref) {
   final settings = ref.watch(userSettingsProvider);
   if (settings == null) return null;
 
-  final allExpenses = ref.watch(expensesProvider);
+  // Use only current-cycle expenses for all budget calculations
+  final cycleExpenses = ref.watch(currentCycleExpensesProvider);
   final plannedExpenses = ref.watch(plannedExpensesProvider);
   final now = DateTime.now();
   final nextPay = settings.nextSalaryDate;
-  
-  // Calculate days left
+
+  // Calculate days left in current cycle
   final todayStart = DateTime(now.year, now.month, now.day);
   final payDateStart = DateTime(nextPay.year, nextPay.month, nextPay.day);
   int daysLeft = payDateStart.difference(todayStart).inDays;
   if (daysLeft <= 0) daysLeft = 1;
 
-  // Monthly breakdown
   final monthlyIncome = settings.monthlyIncome;
   final fixedExpenses = settings.fixedExpenses;
   final savingsGoal = settings.savingsGoal;
 
-  // STEP 1: Available Monthly Spending = Income - Fixed Expenses - Savings Goal
-  final availableSpending = monthlyIncome - fixedExpenses - savingsGoal;
+  // Effective budget = salary + any carry-forward from previous cycle
+  final effectiveBudget = monthlyIncome + settings.carryForwardAmount;
+  final availableSpending = effectiveBudget - fixedExpenses - savingsGoal;
 
-  // STEP 2: Total spent (all expenses) for the REMAINING card
-  final totalSpent = allExpenses.fold(0.0, (sum, item) => sum + item.amount);
+  final totalSpent = cycleExpenses.fold(0.0, (sum, item) => sum + item.amount);
   final remainingBalance = availableSpending - totalSpent;
 
-  // STEP 3: Daily limit uses balance BEFORE today's spending so it stays
-  // fixed throughout the day regardless of how much the user spends.
-  final todaysExp = ref.watch(todaysExpensesProvider);
+  // Daily limit uses balance BEFORE today so it stays fixed throughout the day
+  final todaysExp = cycleExpenses.where((e) =>
+      e.date.year == now.year &&
+      e.date.month == now.month &&
+      e.date.day == now.day).toList();
   final spentToday = todaysExp.fold(0.0, (sum, item) => sum + item.amount);
   final spentBeforeToday = totalSpent - spentToday;
   final balanceBeforeToday = availableSpending - spentBeforeToday;
 
-  // Pending fixed expenses for today (from PlannedExpenses)
   final pendingToday = plannedExpenses.where((e) {
     return e.targetDate.year == now.year &&
            e.targetDate.month == now.month &&

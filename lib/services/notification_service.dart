@@ -1,0 +1,72 @@
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+
+class NotificationService {
+  static final _plugin = FlutterLocalNotificationsPlugin();
+
+  static const _channelId = 'daily_spending_channel';
+  static const _notificationId = 1;
+
+  static Future<void> initialize() async {
+    tz.initializeTimeZones();
+    final timezoneInfo = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(timezoneInfo.identifier));
+
+    const androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const settings = InitializationSettings(android: androidSettings);
+    await _plugin.initialize(settings);
+
+    await _plugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
+  }
+
+  static Future<void> scheduleDailyNotification({
+    required double dailyLimit,
+    required String currencySymbol,
+    int hour = 9,
+    int minute = 0,
+  }) async {
+    await _plugin.cancel(_notificationId);
+
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduled = tz.TZDateTime(
+        tz.local, now.year, now.month, now.day, hour, minute);
+    if (scheduled.isBefore(now)) {
+      scheduled = scheduled.add(const Duration(days: 1));
+    }
+
+    final amount = dailyLimit < 0 ? 0 : dailyLimit;
+    final formatted =
+        '$currencySymbol${amount.toStringAsFixed(0)}';
+
+    await _plugin.zonedSchedule(
+      _notificationId,
+      'Daily Spending Limit 💰',
+      'You can spend up to $formatted today. Stay on track!',
+      scheduled,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channelId,
+          'Daily Spending Limit',
+          channelDescription: 'Daily notification showing your spending limit',
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      matchDateTimeComponents: DateTimeComponents.time,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
+  }
+
+  static Future<void> cancelAll() async {
+    await _plugin.cancelAll();
+  }
+}

@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:workmanager/workmanager.dart';
 
 import 'core/theme/app_theme.dart';
 import 'data/models/user_settings.dart';
 import 'data/models/expense.dart';
 import 'data/models/planned_expense.dart';
+import 'data/models/monthly_report.dart';
 import 'firebase_options.dart';
 import 'core/auth/app_auth_notifier.dart';
 import 'features/onboarding/onboarding_screen.dart';
@@ -22,6 +24,8 @@ import 'features/analytics/analytics_screen.dart';
 import 'features/auth/sign_in_screen.dart';
 import 'features/auth/create_account_screen.dart';
 import 'features/splash/splash_screen.dart';
+import 'services/notification_service.dart';
+import 'services/background_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,9 +48,14 @@ void main() async {
   Hive.registerAdapter(UserSettingsAdapter());
   Hive.registerAdapter(ExpenseAdapter());
   Hive.registerAdapter(PlannedExpenseAdapter());
+  Hive.registerAdapter(MonthlyReportAdapter());
   await Hive.openBox<UserSettings>('user_settings');
   await Hive.openBox<Expense>('expenses');
   await Hive.openBox<PlannedExpense>('planned_expenses');
+  await Hive.openBox<MonthlyReport>('monthly_reports');
+
+  await NotificationService.initialize();
+  await Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
 
   runApp(
     const ProviderScope(

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/expense.dart';
+import '../../data/models/monthly_report.dart';
 import '../../providers/app_providers.dart';
 import '../../services/firestore_service.dart';
 
@@ -21,6 +22,7 @@ const _kCategories = [
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   late DateTime _focusedMonth;
   DateTime? _selectedDate;
+  bool _showReports = false;
 
   @override
   void initState() {
@@ -507,6 +509,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final expenses = ref.watch(expensesProvider);
     final format = ref.watch(formatCurrencyProvider);
     final settings = ref.watch(userSettingsProvider);
+    final reports = ref.watch(monthlyReportsProvider);
 
     final dayTotals = _buildDayTotals(expenses);
 
@@ -527,9 +530,116 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('EXPENSE CALENDAR')),
+      appBar: AppBar(title: const Text('HISTORY')),
       body: Column(
         children: [
+          // Tab toggle: Calendar / Reports
+          Container(
+            color: AppColors.surface,
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _showReports = false),
+                    child: Container(
+                      height: 38,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: !_showReports
+                            ? AppColors.primary
+                            : AppColors.background,
+                        borderRadius: const BorderRadius.horizontal(
+                            left: Radius.circular(10)),
+                        border: Border.all(
+                            color: AppColors.primary.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.calendar_month_rounded,
+                              size: 15,
+                              color: !_showReports
+                                  ? Colors.white
+                                  : AppColors.primary),
+                          const SizedBox(width: 6),
+                          Text('CALENDAR',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: !_showReports
+                                      ? Colors.white
+                                      : AppColors.primary,
+                                  letterSpacing: 0.5)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _showReports = true),
+                    child: Container(
+                      height: 38,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: _showReports
+                            ? AppColors.primary
+                            : AppColors.background,
+                        borderRadius: const BorderRadius.horizontal(
+                            right: Radius.circular(10)),
+                        border: Border.all(
+                            color: AppColors.primary.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.bar_chart_rounded,
+                              size: 15,
+                              color: _showReports
+                                  ? Colors.white
+                                  : AppColors.primary),
+                          const SizedBox(width: 6),
+                          Text('REPORTS',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: _showReports
+                                      ? Colors.white
+                                      : AppColors.primary,
+                                  letterSpacing: 0.5)),
+                          if (reports.isNotEmpty) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: _showReports
+                                    ? Colors.white.withOpacity(0.3)
+                                    : AppColors.primary.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text('${reports.length}',
+                                  style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                      color: _showReports
+                                          ? Colors.white
+                                          : AppColors.primary)),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          if (_showReports)
+            Expanded(child: _buildReportsView(reports, format))
+          else ...[
           // Month navigation header
           Container(
             color: AppColors.surface,
@@ -733,8 +843,193 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               ],
             ),
           ),
+          ], // end of calendar section
         ],
       ),
+    );
+  }
+
+  Widget _buildReportsView(
+      List<MonthlyReport> reports, String Function(double) format) {
+    if (reports.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.bar_chart_rounded,
+                size: 64, color: AppColors.textSecondary.withOpacity(0.3)),
+            const SizedBox(height: 16),
+            const Text('No monthly reports yet',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textSecondary)),
+            const SizedBox(height: 8),
+            const Text('Reports are generated automatically\nat the start of each new salary cycle.',
+                style: TextStyle(
+                    fontSize: 13, color: AppColors.textSecondary, height: 1.5),
+                textAlign: TextAlign.center),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: reports.length,
+      itemBuilder: (_, i) {
+        final r = reports[i];
+        final monthName =
+            DateFormat('MMMM yyyy').format(DateTime(r.year, r.month));
+        final spent = r.totalSpent;
+        final budget = r.effectiveBudget - r.fixedExpenses - r.savingsGoal;
+        final remaining = r.remainingBalance;
+        final spentPct = budget > 0 ? (spent / budget).clamp(0.0, 1.0) : 0.0;
+        final isOver = remaining < 0;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 14),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary.withOpacity(0.08),
+                      AppColors.primary.withOpacity(0.03),
+                    ],
+                  ),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(17)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.calendar_month_rounded,
+                          color: AppColors.primary, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(monthName,
+                              style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textPrimary)),
+                          Text(
+                            '${DateFormat('d MMM').format(r.cycleStart)} – ${DateFormat('d MMM yyyy').format(r.cycleEnd)}',
+                            style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (r.carriedForward)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.success.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '+ ${format(r.carryForwardAmount)} carried',
+                          style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.success),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              // Stats row
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
+                child: Row(
+                  children: [
+                    _ReportStat(
+                        label: 'BUDGET',
+                        value: format(budget),
+                        color: AppColors.primary),
+                    _ReportStat(
+                        label: 'SPENT',
+                        value: format(spent),
+                        color: AppColors.danger),
+                    _ReportStat(
+                        label: 'SAVED',
+                        value: format(remaining.abs()),
+                        color: isOver ? AppColors.danger : AppColors.success,
+                        prefix: isOver ? '-' : '+'),
+                  ],
+                ),
+              ),
+
+              // Spend progress bar
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 12, 18, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          isOver
+                              ? 'Over budget by ${format(remaining.abs())}'
+                              : '${(spentPct * 100).toStringAsFixed(0)}% of budget used',
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: isOver
+                                  ? AppColors.danger
+                                  : AppColors.textSecondary),
+                        ),
+                        if (r.carryForwardAmount > 0 && !r.carriedForward)
+                          Text('Balance not carried forward',
+                              style: TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.textSecondary
+                                      .withOpacity(0.7))),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: spentPct,
+                        minHeight: 6,
+                        backgroundColor: AppColors.border,
+                        valueColor: AlwaysStoppedAnimation(
+                            isOver ? AppColors.danger : AppColors.primary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -779,5 +1074,45 @@ class _Divider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
         width: 1, height: 32, color: AppColors.border, margin: const EdgeInsets.symmetric(horizontal: 8));
+  }
+}
+
+class _ReportStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  final String prefix;
+
+  const _ReportStat(
+      {required this.label,
+      required this.value,
+      required this.color,
+      this.prefix = ''});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                  letterSpacing: 0.5)),
+          const SizedBox(height: 2),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text('$prefix$value',
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: color)),
+          ),
+        ],
+      ),
+    );
   }
 }

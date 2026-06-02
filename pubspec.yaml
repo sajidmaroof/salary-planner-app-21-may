@@ -33,6 +33,10 @@ dependencies:
   flutter_facebook_auth: ^7.1.1
   sign_in_with_apple: ^6.1.2
   crypto: ^3.0.3
+  flutter_local_notifications: ^18.0.1
+  workmanager: ^0.6.0
+  timezone: ^0.9.4
+  flutter_timezone: ^5.0.0
 
 dev_dependencies:
   flutter_test:

@@ -77,11 +77,13 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       });
       // AppAuthNotifier picks up auth state change; router redirects to /setup automatically.
     } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = _errorMessage(e.code);
         _isLoading = false;
       });
     } catch (_) {
+      if (!mounted) return;
       setState(() {
         _error = 'Something went wrong. Please try again.';
         _isLoading = false;

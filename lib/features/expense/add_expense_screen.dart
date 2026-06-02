@@ -82,9 +82,10 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       await box.add(expense);
     }
 
-    ref.invalidate(expensesProvider);
-
-    if (mounted) context.pop();
+    if (mounted) {
+      ref.invalidate(expensesProvider);
+      if (context.canPop()) context.pop(); else context.go('/dashboard');
+    }
   }
 
   @override

@@ -23,13 +23,15 @@ class UserSettingsAdapter extends TypeAdapter<UserSettings> {
       savingsGoal: fields[3] as double,
       currencyCode: fields[4] as String,
       expensesBreakdown: fields[5] as String?,
+      lastSalaryDate: fields[6] as DateTime?,
+      carryForwardAmount: (fields[7] as double?) ?? 0,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserSettings obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.monthlyIncome)
       ..writeByte(1)
@@ -41,7 +43,11 @@ class UserSettingsAdapter extends TypeAdapter<UserSettings> {
       ..writeByte(4)
       ..write(obj.currencyCode)
       ..writeByte(5)
-      ..write(obj.expensesBreakdown);
+      ..write(obj.expensesBreakdown)
+      ..writeByte(6)
+      ..write(obj.lastSalaryDate)
+      ..writeByte(7)
+      ..write(obj.carryForwardAmount);
   }
 
   @override

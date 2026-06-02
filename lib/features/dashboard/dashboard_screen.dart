@@ -4,10 +4,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import '../../core/auth/app_auth_notifier.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/expense.dart';
+import '../../data/models/monthly_report.dart';
 import '../../data/models/user_settings.dart';
 import '../../providers/app_providers.dart';
 import '../../services/firestore_service.dart';
@@ -27,10 +29,232 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  double? _lastViewedSpentToday;
+  bool _cycleChecked = false;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _syncOnLoad());
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _syncOnLoad();
+      if (mounted && !_cycleChecked) {
+        _cycleChecked = true;
+        await _checkPaydayCycle();
+      }
+    });
+  }
+
+  // ── Payday cycle detection ─────────────────────────────────────────────────
+  Future<void> _checkPaydayCycle() async {
+    final settings = ref.read(userSettingsProvider);
+    if (settings == null || !mounted) return;
+
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    var nextPayStart = DateTime(
+        settings.nextSalaryDate.year,
+        settings.nextSalaryDate.month,
+        settings.nextSalaryDate.day);
+
+    if (todayStart.isBefore(nextPayStart)) return; // Not yet payday
+
+    // Process all missed cycles (e.g. 2+ months without opening app)
+    var currentSettings = settings;
+    while (!todayStart.isBefore(nextPayStart)) {
+      currentSettings = await _processCycleEnd(currentSettings, nextPayStart, todayStart);
+      if (!mounted) return;
+      nextPayStart = DateTime(
+          currentSettings.nextSalaryDate.year,
+          currentSettings.nextSalaryDate.month,
+          currentSettings.nextSalaryDate.day);
+    }
+  }
+
+  Future<UserSettings> _processCycleEnd(
+      UserSettings settings, DateTime cycleEnd, DateTime today) async {
+    final cycleStart = settings.lastSalaryDate ??
+        DateTime(cycleEnd.year, cycleEnd.month - 1, cycleEnd.day);
+
+    // Calculate remaining balance for the ending cycle
+    final allExpenses = ref.read(expensesProvider);
+    final cycleExpenses =
+        allExpenses.where((e) => !e.date.isBefore(cycleStart)).toList();
+    final totalSpent = cycleExpenses.fold(0.0, (s, e) => s + e.amount);
+    final effectiveBudget =
+        settings.monthlyIncome + settings.carryForwardAmount;
+    final availableSpending =
+        effectiveBudget - settings.fixedExpenses - settings.savingsGoal;
+    final remainingBalance = availableSpending - totalSpent;
+
+    // Show carry-forward dialog only for the most recent completed cycle
+    bool carriedForward = false;
+    double carryAmount = 0;
+    if (remainingBalance > 0 && mounted) {
+      final format = ref.read(formatCurrencyProvider);
+      final result = await _showCarryForwardDialog(remainingBalance, format);
+      if (result == true) {
+        carriedForward = true;
+        carryAmount = remainingBalance;
+      }
+    }
+
+    // Save MonthlyReport to Hive
+    final report = MonthlyReport(
+      year: cycleStart.year,
+      month: cycleStart.month,
+      monthlyIncome: settings.monthlyIncome,
+      fixedExpenses: settings.fixedExpenses,
+      savingsGoal: settings.savingsGoal,
+      effectiveBudget: effectiveBudget,
+      totalSpent: totalSpent,
+      remainingBalance: remainingBalance,
+      carriedForward: carriedForward,
+      carryForwardAmount: carryAmount,
+      currencyCode: settings.currencyCode,
+      cycleStart: cycleStart,
+      cycleEnd: cycleEnd,
+    );
+    await Hive.box<MonthlyReport>('monthly_reports').add(report);
+    ref.invalidate(monthlyReportsProvider);
+
+    // Advance nextSalaryDate by 1 month
+    final newNextSalary = DateTime(
+      settings.nextSalaryDate.year,
+      settings.nextSalaryDate.month + 1,
+      settings.nextSalaryDate.day,
+    );
+
+    final updatedSettings = UserSettings(
+      monthlyIncome: settings.monthlyIncome,
+      nextSalaryDate: newNextSalary,
+      fixedExpenses: settings.fixedExpenses,
+      savingsGoal: settings.savingsGoal,
+      currencyCode: settings.currencyCode,
+      expensesBreakdown: settings.expensesBreakdown,
+      lastSalaryDate: cycleEnd,
+      carryForwardAmount: carryAmount,
+    );
+
+    final box = ref.read(userSettingsBoxProvider);
+    await box.put('settings', updatedSettings);
+    if (mounted) {
+      ref.read(userSettingsProvider.notifier).state = updatedSettings;
+      ref.invalidate(currentCycleExpensesProvider);
+      ref.invalidate(dailyStatsProvider);
+    }
+
+    // Push updated settings to Firestore in background
+    _pushNewCycleToFirestore(updatedSettings);
+
+    return updatedSettings;
+  }
+
+  Future<bool?> _showCarryForwardDialog(
+      double remaining, String Function(double) format) {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: AppColors.background,
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64, height: 64,
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.celebration_rounded,
+                    color: Colors.white, size: 32),
+              ),
+              const SizedBox(height: 20),
+              const Text('New Month, New Budget!',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary),
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 10),
+              Text(
+                'Your salary has arrived! You have ${format(remaining)} remaining from last month.',
+                style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                    height: 1.5),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Would you like to carry forward this balance?',
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: const BorderSide(color: AppColors.border),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: const Text('No',
+                          style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: const Text('Yes, carry forward',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pushNewCycleToFirestore(UserSettings settings) async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'nextSalaryDate':
+            Timestamp.fromDate(settings.nextSalaryDate),
+        'lastSalaryDate': settings.lastSalaryDate != null
+            ? Timestamp.fromDate(settings.lastSalaryDate!)
+            : null,
+        'carryForwardAmount': settings.carryForwardAmount,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (_) {}
   }
 
   Future<void> _syncOnLoad() async {
@@ -515,7 +739,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => Container(
+      builder: (sheetCtx) => Container(
         decoration: const BoxDecoration(
           color: AppColors.background,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -546,44 +770,95 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            ...notifications.map((n) => Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: n.color.withOpacity(0.06),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: n.color.withOpacity(0.2)),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 36, height: 36,
-                    decoration: BoxDecoration(
-                      color: n.color.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(n.icon, color: n.color, size: 18),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
+            ...notifications.map((n) => GestureDetector(
+              onTap: () => showDialog(
+                context: sheetCtx,
+                builder: (dialogCtx) => Dialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  backgroundColor: AppColors.background,
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(n.title, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: n.color)),
-                        const SizedBox(height: 2),
-                        Text(n.body, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4)),
+                        Container(
+                          width: 64, height: 64,
+                          decoration: BoxDecoration(
+                            color: n.color.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(n.icon, color: n.color, size: 30),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(n.title,
+                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: n.color),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(n.body,
+                          style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(dialogCtx),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: n.color,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                            child: const Text('Got it', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                ],
+                ),
+              ),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: n.color.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: n.color.withOpacity(0.2)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 36, height: 36,
+                      decoration: BoxDecoration(
+                        color: n.color.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(n.icon, color: n.color, size: 18),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(n.title, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: n.color)),
+                          const SizedBox(height: 2),
+                          Text(n.body, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(Icons.chevron_right_rounded, color: n.color.withOpacity(0.6), size: 18),
+                  ],
+                ),
               ),
             )),
             const SizedBox(height: 4),
             SizedBox(
               width: double.infinity,
               child: TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(sheetCtx),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -967,9 +1242,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             children: [
               IconButton(
                 icon: const Icon(Icons.notifications_rounded),
-                onPressed: () => _showNotificationsSheet(context, stats),
+                onPressed: () {
+                  setState(() => _lastViewedSpentToday = stats.spentToday);
+                  _showNotificationsSheet(context, stats);
+                },
               ),
-              if (stats.spentToday > stats.dailyLimit && stats.dailyLimit > 0)
+              if (stats.spentToday > stats.dailyLimit &&
+                  stats.dailyLimit > 0 &&
+                  (_lastViewedSpentToday == null ||
+                      stats.spentToday > _lastViewedSpentToday! + 0.01))
                 Positioned(
                   right: 8,
                   top: 8,

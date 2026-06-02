@@ -22,6 +22,12 @@ class UserSettings extends HiveObject {
   @HiveField(5)
   String? expensesBreakdown; // JSON-encoded Map<String, double>
 
+  @HiveField(6)
+  DateTime? lastSalaryDate; // start of current cycle
+
+  @HiveField(7)
+  double carryForwardAmount; // carry-forward from previous cycle
+
   UserSettings({
     required this.monthlyIncome,
     required this.nextSalaryDate,
@@ -29,5 +35,7 @@ class UserSettings extends HiveObject {
     required this.savingsGoal,
     this.currencyCode = 'PKR',
     this.expensesBreakdown,
+    this.lastSalaryDate,
+    this.carryForwardAmount = 0,
   });
 }
