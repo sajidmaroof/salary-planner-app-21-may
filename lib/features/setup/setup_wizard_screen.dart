@@ -7,6 +7,7 @@ import '../../core/auth/app_auth_notifier.dart';
 import '../../data/models/user_settings.dart';
 import '../../providers/app_providers.dart';
 import '../../services/firestore_service.dart';
+import '../../services/notification_service.dart';
 
 import '../../data/models/currency.dart';
 
@@ -142,6 +143,9 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
     ref.invalidate(expensesProvider);
     ref.invalidate(todaysExpensesProvider);
     ref.invalidate(dailyStatsProvider);
+
+    // Schedule payday push notification
+    NotificationService.schedulePaydayNotification(payday: _selectedDate!);
 
     // Save to Firestore in the background (non-blocking).
     FirestoreService.saveUserSetup(

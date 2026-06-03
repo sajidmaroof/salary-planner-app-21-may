@@ -100,6 +100,14 @@ class AppAuthNotifier extends ChangeNotifier {
           data['currencyCode'] as String? ?? existing?.currencyCode ?? 'PKR';
       final breakdown = data['expensesBreakdown'] as String?;
 
+      // Preserve cycle fields — prefer Firestore value, fall back to local Hive
+      final lastSalaryDate = data['lastSalaryDate'] != null
+          ? (data['lastSalaryDate'] as Timestamp).toDate()
+          : existing?.lastSalaryDate;
+      final carryForwardAmount =
+          (data['carryForwardAmount'] as num?)?.toDouble() ??
+              existing?.carryForwardAmount ?? 0;
+
       final settings = UserSettings(
         monthlyIncome: income,
         nextSalaryDate: nextSalary,
@@ -107,6 +115,8 @@ class AppAuthNotifier extends ChangeNotifier {
         savingsGoal: savings,
         currencyCode: currency,
         expensesBreakdown: breakdown,
+        lastSalaryDate: lastSalaryDate,
+        carryForwardAmount: carryForwardAmount,
       );
       await box.put('settings', settings);
     } catch (_) {}

@@ -13,6 +13,7 @@ import '../../data/models/monthly_report.dart';
 import '../../data/models/user_settings.dart';
 import '../../providers/app_providers.dart';
 import '../../services/firestore_service.dart';
+import '../../services/notification_service.dart';
 import '../../services/pdf_export_service.dart';
 import 'widgets/daily_budget_card.dart';
 
@@ -86,13 +87,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         effectiveBudget - settings.fixedExpenses - settings.savingsGoal;
     final remainingBalance = availableSpending - totalSpent;
 
-    // Show carry-forward dialog only for the most recent completed cycle
+    // Always show payday dialog so user is informed
     bool carriedForward = false;
     double carryAmount = 0;
-    if (remainingBalance > 0 && mounted) {
+    if (mounted) {
       final format = ref.read(formatCurrencyProvider);
-      final result = await _showCarryForwardDialog(remainingBalance, format);
-      if (result == true) {
+      final result =
+          await _showCarryForwardDialog(remainingBalance, format);
+      if (result == true && remainingBalance > 0) {
         carriedForward = true;
         carryAmount = remainingBalance;
       }
@@ -143,6 +145,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ref.invalidate(dailyStatsProvider);
     }
 
+    // Schedule payday notification for next cycle
+    NotificationService.schedulePaydayNotification(payday: newNextSalary);
+
+    // Immediate confirmation notification
+    NotificationService.showImmediateNotification(
+      title: 'New budget cycle started! 🎉',
+      body: 'Your budget has been reset for the new month.',
+    );
+
     // Push updated settings to Firestore in background
     _pushNewCycleToFirestore(updatedSettings);
 
@@ -151,6 +162,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Future<bool?> _showCarryForwardDialog(
       double remaining, String Function(double) format) {
+    final hasRemaining = remaining > 0;
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -172,68 +184,92 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     color: Colors.white, size: 32),
               ),
               const SizedBox(height: 20),
-              const Text('New Month, New Budget!',
+              const Text('Payday! 🎉',
                   style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary),
                   textAlign: TextAlign.center),
               const SizedBox(height: 10),
               Text(
-                'Your salary has arrived! You have ${format(remaining)} remaining from last month.',
+                hasRemaining
+                    ? 'Your salary has arrived! You saved ${format(remaining)} last month.'
+                    : 'Your salary has arrived! Your new budget is ready.',
                 style: const TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,
                     height: 1.5),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Would you like to carry forward this balance?',
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary),
-                textAlign: TextAlign.center,
-              ),
+              if (hasRemaining) ...[
+                const SizedBox(height: 8),
+                const Text(
+                  'Would you like to carry forward this balance?',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary),
+                  textAlign: TextAlign.center,
+                ),
+              ],
               const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        side: const BorderSide(color: AppColors.border),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+              if (hasRemaining)
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: const BorderSide(color: AppColors.border),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                        ),
+                        child: const Text('No',
+                            style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w700)),
                       ),
-                      child: const Text('No',
-                          style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w700)),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                        ),
+                        child: const Text('Yes, carry forward',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13)),
                       ),
-                      child: const Text('Yes, carry forward',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13)),
                     ),
+                  ],
+                )
+              else
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: const Text('Start New Month',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700)),
                   ),
-                ],
-              ),
+                ),
             ],
           ),
         ),
