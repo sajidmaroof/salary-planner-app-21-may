@@ -12,9 +12,13 @@ import '../../data/models/expense.dart';
 import '../../data/models/monthly_report.dart';
 import '../../data/models/user_settings.dart';
 import '../../providers/app_providers.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import '../../services/ad_service.dart';
 import '../../services/firestore_service.dart';
 import '../../services/notification_service.dart';
 import '../../services/pdf_export_service.dart';
+import '../../services/pro_service.dart';
+import '../pro/pro_upgrade_screen.dart';
 import 'widgets/daily_budget_card.dart';
 
 // All categories stored and displayed in lowercase to avoid mismatch
@@ -32,10 +36,14 @@ class DashboardScreen extends ConsumerStatefulWidget {
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   double? _lastViewedSpentToday;
   bool _cycleChecked = false;
+  BannerAd? _bannerAd;
 
   @override
   void initState() {
     super.initState();
+    if (!ProService.isPro) {
+      _bannerAd = AdService.createBanner();
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _syncOnLoad();
       if (mounted && !_cycleChecked) {
@@ -43,6 +51,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         await _checkPaydayCycle();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _bannerAd?.dispose();
+    super.dispose();
   }
 
   // ── Payday cycle detection ─────────────────────────────────────────────────
@@ -573,12 +587,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (_) => Container(
         decoration: const BoxDecoration(
           color: AppColors.background,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+        padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.of(context).padding.bottom + 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1146,7 +1161,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       child: Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2, color: Color(0xFF94A3B8))),
     );
 
-    Widget drawerItem({required IconData icon, required String label, required VoidCallback onTap, bool active = false}) {
+    Widget drawerItem({required IconData icon, required String label, required VoidCallback onTap, bool active = false, String? badge}) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
         child: ListTile(
@@ -1158,7 +1173,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             child: Icon(icon, size: 20, color: active ? AppColors.primary : const Color(0xFF64748B)),
           ),
-          title: Text(label, style: TextStyle(fontSize: 15, fontWeight: active ? FontWeight.w800 : FontWeight.w600, color: active ? AppColors.primary : const Color(0xFF1E293B))),
+          title: Row(
+            children: [
+              Text(label, style: TextStyle(fontSize: 15, fontWeight: active ? FontWeight.w800 : FontWeight.w600, color: active ? AppColors.primary : const Color(0xFF1E293B))),
+              if (badge != null) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(badge, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 0.5)),
+                ),
+              ],
+            ],
+          ),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           tileColor: active ? AppColors.primary.withOpacity(0.08) : Colors.transparent,
           onTap: onTap,
@@ -1216,8 +1246,32 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 drawerItem(icon: Icons.dashboard_rounded, label: 'Dashboard', active: true, onTap: () => Navigator.pop(context)),
                 sectionLabel('FINANCE'),
                 drawerItem(icon: Icons.receipt_long_rounded, label: 'Transactions', onTap: () { Navigator.pop(context); context.push('/history'); }),
-                drawerItem(icon: Icons.upload_rounded, label: 'Export Report', onTap: () { Navigator.pop(context); _showExportDialog(context); }),
-                drawerItem(icon: Icons.donut_large_rounded, label: 'Analytics', onTap: () { Navigator.pop(context); context.push('/analytics'); }),
+                drawerItem(
+                  icon: Icons.upload_rounded,
+                  label: 'Export Report',
+                  badge: ProService.isPro ? null : 'PRO',
+                  onTap: () async {
+                    Navigator.pop(context);
+                    if (!ProService.isPro) {
+                      await ProUpgradeScreen.show(context);
+                    } else {
+                      _showExportDialog(context);
+                    }
+                  },
+                ),
+                drawerItem(
+                  icon: Icons.donut_large_rounded,
+                  label: 'Analytics',
+                  badge: ProService.isPro ? null : 'PRO',
+                  onTap: () async {
+                    Navigator.pop(context);
+                    if (!ProService.isPro) {
+                      await ProUpgradeScreen.show(context);
+                    } else {
+                      context.push('/analytics');
+                    }
+                  },
+                ),
                 drawerItem(icon: Icons.savings_rounded, label: 'Savings Goals', onTap: () => _comingSoon('Savings Goals')),
                 drawerItem(icon: Icons.account_balance_wallet_rounded, label: 'Budget Planner', onTap: () => _comingSoon('Budget Planner')),
                 sectionLabel('ACCOUNT'),
@@ -1479,6 +1533,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      bottomNavigationBar: (!ProService.isPro && _bannerAd != null)
+          ? SizedBox(
+              height: 52,
+              child: AdWidget(ad: _bannerAd!),
+            )
+          : null,
     );
   }
 

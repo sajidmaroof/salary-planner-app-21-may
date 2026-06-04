@@ -37,6 +37,7 @@ dependencies:
   workmanager: ^0.6.0
   timezone: ^0.9.4
   flutter_timezone: ^5.0.0
+  google_mobile_ads: ^5.1.0
 
 dev_dependencies:
   flutter_test:

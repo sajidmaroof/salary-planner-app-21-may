@@ -26,6 +26,8 @@ import 'features/auth/create_account_screen.dart';
 import 'features/splash/splash_screen.dart';
 import 'services/notification_service.dart';
 import 'services/background_service.dart';
+import 'services/ad_service.dart';
+import 'services/pro_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -56,6 +58,8 @@ void main() async {
 
   await NotificationService.initialize();
   await Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
+  await ProService.initialize();
+  await AdService.initialize();
 
   runApp(
     const ProviderScope(
