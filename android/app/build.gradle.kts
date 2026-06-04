@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.salaryplanner.salary_planner"
+    namespace = "com.zonestudio.salaryplanner"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -25,7 +25,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.salaryplanner.salary_planner"
+        applicationId = "com.zonestudio.salaryplanner"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -34,11 +34,18 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            keyAlias = "zonestudio"
+            keyPassword = "zonestudio123"
+            storeFile = file("zonestudio-release.jks")
+            storePassword = "zonestudio123"
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }

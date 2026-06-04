@@ -29,6 +29,20 @@ import 'services/background_service.dart';
 import 'services/ad_service.dart';
 import 'services/pro_service.dart';
 
+Future<void> _initHive() async {
+  await Hive.initFlutter();
+  Hive.registerAdapter(UserSettingsAdapter());
+  Hive.registerAdapter(ExpenseAdapter());
+  Hive.registerAdapter(PlannedExpenseAdapter());
+  Hive.registerAdapter(MonthlyReportAdapter());
+  await Future.wait([
+    Hive.openBox<UserSettings>('user_settings'),
+    Hive.openBox<Expense>('expenses'),
+    Hive.openBox<PlannedExpense>('planned_expenses'),
+    Hive.openBox<MonthlyReport>('monthly_reports'),
+  ]);
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -44,22 +58,21 @@ void main() async {
     return false;
   };
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Run Firebase and Hive in parallel — biggest startup win
+  await Future.wait([
+    Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
+    _initHive(),
+  ]);
 
-  await Hive.initFlutter();
-  Hive.registerAdapter(UserSettingsAdapter());
-  Hive.registerAdapter(ExpenseAdapter());
-  Hive.registerAdapter(PlannedExpenseAdapter());
-  Hive.registerAdapter(MonthlyReportAdapter());
-  await Hive.openBox<UserSettings>('user_settings');
-  await Hive.openBox<Expense>('expenses');
-  await Hive.openBox<PlannedExpense>('planned_expenses');
-  await Hive.openBox<MonthlyReport>('monthly_reports');
+  // These are fast and need Hive/Firebase ready
+  await Future.wait([
+    NotificationService.initialize(),
+    ProService.initialize(),
+  ]);
 
-  await NotificationService.initialize();
-  await Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
-  await ProService.initialize();
-  await AdService.initialize();
+  // Fire-and-forget: don't block app start for these
+  Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
+  AdService.initialize();
 
   runApp(
     const ProviderScope(
