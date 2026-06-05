@@ -3,7 +3,7 @@ description: A new Flutter project for Salary-to-Salary Planner.
 
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.2+3
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -20,7 +20,6 @@ dependencies:
   fl_chart: ^0.66.0
   google_fonts: ^6.2.1
   shared_preferences: ^2.2.2
-  image_picker: ^1.0.7
   share_plus: ^7.2.2
   pdf: ^3.10.8
   cupertino_icons: ^1.0.6
@@ -30,7 +29,6 @@ dependencies:
   lottie: ^3.1.0
   flutter_svg: ^2.0.10+1
   google_sign_in: ^6.2.1
-  flutter_facebook_auth: ^7.1.1
   sign_in_with_apple: ^6.1.2
   crypto: ^3.0.3
   flutter_local_notifications: ^18.0.1
@@ -45,6 +43,14 @@ dev_dependencies:
   hive_generator: ^2.0.1
   build_runner: ^2.4.8
   flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "store_assets/app_icon.png"
+  adaptive_icon_background: "#F1EFF7"
+  adaptive_icon_foreground: "store_assets/app_icon.png"
 
 flutter:
   uses-material-design: true

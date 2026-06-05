@@ -85,13 +85,11 @@ class _SocialLoginScreenState extends State<SocialLoginScreen> {
 
   static const _providerIcons = {
     'Google': 'assets/icons/google_icon.svg',
-    'Facebook': 'assets/icons/facebook_icon.svg',
     'Apple': 'assets/icons/apple_icon.svg',
   };
 
   static const _providerColors = {
     'Google': Color(0xFFEA4335),
-    'Facebook': Color(0xFF1877F2),
     'Apple': Color(0xFF000000),
   };
 
@@ -106,9 +104,6 @@ class _SocialLoginScreenState extends State<SocialLoginScreen> {
       switch (widget.provider) {
         case 'Google':
           await SocialAuthService.signInWithGoogle();
-          break;
-        case 'Facebook':
-          await SocialAuthService.signInWithFacebook();
           break;
         case 'Apple':
           await SocialAuthService.signInWithApple();

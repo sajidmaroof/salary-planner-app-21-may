@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
@@ -16,15 +15,6 @@ class SocialAuthService {
       accessToken: googleAuth.accessToken,
       idToken: googleAuth.idToken,
     );
-    return FirebaseAuth.instance.signInWithCredential(credential);
-  }
-
-  static Future<UserCredential?> signInWithFacebook() async {
-    final result = await FacebookAuth.instance.login();
-    if (result.status != LoginStatus.success) return null;
-
-    final credential =
-        FacebookAuthProvider.credential(result.accessToken!.tokenString);
     return FirebaseAuth.instance.signInWithCredential(credential);
   }
 

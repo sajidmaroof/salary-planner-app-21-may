@@ -178,11 +178,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         ),
                         const SizedBox(width: 13),
                         _SocialButton(
-                          icon: SvgPicture.asset('assets/icons/facebook_icon.svg', width: 15, height: 15),
-                          onTap: () => context.push('/social-login/Facebook'),
-                        ),
-                        const SizedBox(width: 13),
-                        _SocialButton(
                           icon: SvgPicture.asset('assets/icons/apple_icon.svg', width: 14, height: 14),
                           onTap: () => context.push('/social-login/Apple'),
                         ),

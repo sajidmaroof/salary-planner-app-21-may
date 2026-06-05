@@ -1,0 +1,49 @@
+<svg width="1024" height="500" viewBox="0 0 1024 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#EC4899"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.05"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="500" fill="url(#bg)"/>
+
+  <!-- Decorative circles -->
+  <circle cx="880" cy="80" r="180" fill="#FFFFFF" opacity="0.06"/>
+  <circle cx="120" cy="430" r="150" fill="#FFFFFF" opacity="0.06"/>
+
+  <!-- Wallet icon card -->
+  <g filter="url(#shadow)">
+    <rect x="120" y="150" width="200" height="200" rx="48" fill="url(#card)" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="2"/>
+    <!-- Wallet shape -->
+    <rect x="165" y="200" width="110" height="85" rx="14" fill="#FFFFFF"/>
+    <rect x="165" y="200" width="110" height="28" rx="14" fill="#FFFFFF" opacity="0.85"/>
+    <circle cx="252" cy="242" r="11" fill="#7C3AED"/>
+  </g>
+
+  <!-- App name -->
+  <text x="380" y="225" font-family="Arial, sans-serif" font-size="72" font-weight="900" fill="#FFFFFF">Salary Planner</text>
+
+  <!-- Tagline -->
+  <text x="382" y="285" font-family="Arial, sans-serif" font-size="32" font-weight="400" fill="#FFFFFF" opacity="0.92">Master your money, payday to payday</text>
+
+  <!-- Feature pills -->
+  <g font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#7C3AED">
+    <rect x="382" y="320" width="200" height="52" rx="26" fill="#FFFFFF"/>
+    <text x="408" y="354">Daily Limits</text>
+
+    <rect x="598" y="320" width="180" height="52" rx="26" fill="#FFFFFF"/>
+    <text x="624" y="354">Budgeting</text>
+
+    <rect x="794" y="320" width="150" height="52" rx="26" fill="#FFFFFF"/>
+    <text x="820" y="354">Reports</text>
+  </g>
+</svg>
