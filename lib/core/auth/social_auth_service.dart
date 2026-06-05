@@ -7,7 +7,11 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 class SocialAuthService {
   static Future<UserCredential?> signInWithGoogle() async {
-    final googleUser = await GoogleSignIn().signIn();
+    final googleSignIn = GoogleSignIn();
+    // Sign out first so the account picker always appears
+    await googleSignIn.signOut();
+
+    final googleUser = await googleSignIn.signIn();
     if (googleUser == null) return null;
 
     final googleAuth = await googleUser.authentication;

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -166,11 +167,59 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
     }
   }
 
+  Future<void> _switchAccount() async {
+    final email = FirebaseAuth.instance.currentUser?.email ?? '';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Switch account?',
+            style: TextStyle(fontWeight: FontWeight.w800)),
+        content: Text(
+          email.isEmpty
+              ? 'You will be signed out and returned to the login screen.'
+              : 'You are signed in as $email.\n\nSign out and return to the login screen to use a different account?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Switch account',
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await appAuthNotifier.signOut();
+    // Router redirect sends the user back to onboarding automatically.
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: Text(widget.editMode ? 'EDIT BUDGET' : 'SETUP BUDGET')),
+      appBar: AppBar(
+        title: Text(widget.editMode ? 'EDIT BUDGET' : 'SETUP BUDGET'),
+        automaticallyImplyLeading: false,
+        actions: [
+          if (!widget.editMode)
+            TextButton.icon(
+              onPressed: _switchAccount,
+              icon: const Icon(Icons.logout_rounded, size: 18, color: AppColors.primary),
+              label: const Text('Switch account',
+                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 13)),
+            ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(28.0),
         child: Form(
