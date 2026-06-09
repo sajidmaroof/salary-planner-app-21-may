@@ -40,6 +40,9 @@ Future<void> _initHive() async {
     Hive.openBox<Expense>('expenses'),
     Hive.openBox<PlannedExpense>('planned_expenses'),
     Hive.openBox<MonthlyReport>('monthly_reports'),
+    // Small metadata box (last user id, setup flag). Persists reliably even
+    // when SharedPreferences writes get lost on aggressive OEMs (ColorOS etc).
+    Hive.openBox('app_meta'),
   ]);
 }
 

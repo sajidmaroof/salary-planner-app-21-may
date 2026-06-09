@@ -47,3 +47,7 @@ app.*.map.json
 # Firebase credentials — do not commit
 google-services.json
 GoogleService-Info.plist
+
+# Local build/run logs
+run_log*.txt
+aab_build.log

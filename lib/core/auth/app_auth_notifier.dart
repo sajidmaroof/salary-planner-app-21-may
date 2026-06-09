@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/user_settings.dart';
 import '../../data/models/monthly_report.dart';
 import '../../services/background_service.dart';
@@ -25,6 +24,11 @@ class AppAuthNotifier extends ChangeNotifier {
     FirebaseAuth.instance.authStateChanges().listen(_onAuthChanged);
   }
 
+  // Metadata that must persist reliably across launches. Stored in Hive
+  // because SharedPreferences writes can silently fail on aggressive OEMs
+  // (e.g. ColorOS/HANS freezing the app before the async save flushes).
+  Box get _meta => Hive.box('app_meta');
+
   Future<void> _onAuthChanged(User? user) async {
     _user = user;
     if (user != null) {
@@ -40,19 +44,24 @@ class AppAuthNotifier extends ChangeNotifier {
   }
 
   Future<void> _clearLocalDataIfUserChanged(String uid) async {
-    final prefs = await SharedPreferences.getInstance();
-    final lastUid = prefs.getString('last_user_uid');
+    final lastUid = _meta.get('last_user_uid') as String?;
     if (lastUid != null && lastUid != uid) {
-      // Different account — wipe ALL local Hive data so previous user's data is not reused
+      // Different account — wipe local Hive data so previous user's data is
+      // not reused. (app_meta is intentionally NOT cleared.)
       await Hive.box<UserSettings>('user_settings').clear();
       await Hive.box('expenses').clear();
       await Hive.box('planned_expenses').clear();
       await Hive.box<MonthlyReport>('monthly_reports').clear();
     }
-    await prefs.setString('last_user_uid', uid);
+    await _meta.put('last_user_uid', uid);
   }
 
+  static String _localFlagKey(String uid) => 'setup_complete_$uid';
+
   Future<void> _fetchSetupStatus(String uid) async {
+    // Local flag is the most reliable signal that THIS device finished setup.
+    final localComplete = _meta.get(_localFlagKey(uid)) as bool? ?? false;
+
     try {
       final doc = await FirebaseFirestore.instance
           .collection('users')
@@ -66,6 +75,7 @@ class AppAuthNotifier extends ChangeNotifier {
         // Sync Firestore settings into local Hive so any device gets data
         await _loadSettingsFromFirestore(data);
         _setupComplete = true;
+        await _meta.put(_localFlagKey(uid), true);
         return;
       }
     } catch (_) {}
@@ -75,11 +85,15 @@ class AppAuthNotifier extends ChangeNotifier {
     final settings = box.get('settings');
     if (settings != null && settings.monthlyIncome > 0) {
       _setupComplete = true;
+      await _meta.put(_localFlagKey(uid), true);
       // Push setupComplete to Firestore in background so other devices sync
       _pushSetupCompleteToFirestore(uid, settings);
-    } else {
-      _setupComplete = false;
+      return;
     }
+
+    // Last resort: trust the local flag so a finished user is never bounced
+    // back to setup just because Firestore/Hive lookups came up empty.
+    _setupComplete = localComplete;
   }
 
   Future<void> _loadSettingsFromFirestore(Map<String, dynamic> data) async {
@@ -148,11 +162,19 @@ class AppAuthNotifier extends ChangeNotifier {
   void markSetupComplete() {
     _setupComplete = true;
     notifyListeners();
+    final uid = _user?.uid;
+    if (uid != null) {
+      _meta.put(_localFlagKey(uid), true);
+    }
   }
 
   void markSetupIncomplete() {
     _setupComplete = false;
     notifyListeners();
+    final uid = _user?.uid;
+    if (uid != null) {
+      _meta.delete(_localFlagKey(uid));
+    }
   }
 
   Future<void> signOut() async {

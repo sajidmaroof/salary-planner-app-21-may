@@ -3,7 +3,7 @@ description: A new Flutter project for Salary-to-Salary Planner.
 
 publish_to: 'none'
 
-version: 1.0.2+3
+version: 1.0.3+4
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -48,9 +48,9 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "store_assets/app_icon.png"
-  adaptive_icon_background: "#F1EFF7"
-  adaptive_icon_foreground: "store_assets/app_icon.png"
+  image_path: "store_assets/app_icon_full.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "store_assets/app_icon_fg.png"
 
 flutter:
   uses-material-design: true
